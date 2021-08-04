@@ -4,9 +4,11 @@ const sequelize = require("./config/connection")
 // Sets up the Express App
 // =============================================================
 const app = express();
-const PORT = process.env.PORT || 3000;
-const routes = require('./controllers');
 
+const routes = require('./controllers');
+app.listen(process.env.PORT || 3000, function(){
+    console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
+  });
 
 // Sets up the Express app to handle data parsing
 app.use(express.urlencoded({ extended: true }));
