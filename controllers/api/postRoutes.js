@@ -1,80 +1,77 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('../../models');
+const db = require("../../models");
+const auth = require("../../utils/auth");
 
+// get all posts
+router.get("/", async (req, res) => {
+  try {
+    const posts = await db.Post.findAll({
+      attributes: { exclude: [`createdAt`, `updatedAt`] },
+    });
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+});
 
-router.get("/",(req,res)=>{
-    db.Post.findAll({
-        include:[db.Comment]
-    }).then(post =>{
-        res.json(post);
-    }).catch(err=>{
-        console.log(err);
-        res.status(500).json(err);
-    })
-})
-
-router.post("/",(req,res)=>{
-    if(req.session.user){
-    db.Post.create({
-        UserId:req.session.user.id,
-        description:req.body.description,
-    }).then(post=>{
-        res.json(post);
-    }).catch(err=>{
-        console.log(err);
-        res.status(500).json(err);
-    })
-    }else {
-        res.status(403).send("not logged in")
-    }
-})
-
-router.delete("/:id",(req,res)=>{
-    db.Post.destroy({
-        where:{
-            id:req.params.id
-        }
-    }).then(post=>{
-        res.json(post);
-    }).catch(err=>{
-        console.log(err);
-        res.status(500).json(err);
-    })
-})
-
-router.put('/:id', (req, res) => {
-    db.Post.update(
-      {
-        description: req.body.description
+// get post by id
+router.get("/:id", async (req, res) => {
+  try {
+    const post = await db.Post.findOne({
+      where: { id: req.params.id },
+      include: {
+        model: db.Comment,
+        attributes: { exclude: [`createdAt`, `updatedAt`] },
       },
-      {     
-        where: {
-          id: req.params.id,
-        },
+      attributes: { exclude: [`createdAt`, `updatedAt`] },
+    });
+    res.status(200).json(post);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+});
+
+// post post
+router.post("/", async (req, res) => {
+  try {
+    const newPost = await db.Post.create(req.body);
+    res.status(200).json(newPost);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
+  }
+});
+
+// delete post
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    db.Post.destroy({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    res.json({ message: "Post deleted" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+});
+
+router.put(`/:id`,async (req,res)=>{
+  try{
+    db.Post.update(req.body, {
+      where:{
+        id: req.params.id
       }
-    )
-      .then((post) => {
-        res.json(post);
-      })
-      .catch((err) => {
-      console.log(err);
-      res.json(err)
-      });
-  });
-
-  router.get("/:id",(req,res)=>{
-    db.Post.findByPk(req.params.id,{
-        include:[{
-            model:db.Comment
-        }]
-    }).then(post=>{
-        res.json(post);
-    }).catch(err=>{
-        console.log(err);
-        res.status(500).json(err);
     })
+  }catch (err){
+    console.log(err)
+    res.status(500).json(err)
+  }
 })
-
 
 module.exports = router;
